@@ -14,12 +14,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
 from server import __version__
+from server.ai.probe import data_dir, ms_loop
 from server.api import (
     auth,
+    chat,
     dashboard,
     deps,  # noqa: F401  (rate limits, wired in P3)
     documents,
@@ -31,13 +33,14 @@ from server.api import (
     me,
     notifications,
     points,
-    probe_p0,
+    projects,
     schedule,
     subjects,
+    summaries,
     transcripts,
 )
-from server.ai.probe import data_dir, ms_loop
 from server.config import settings
+from server.jobs import runner
 from server.seed import seed_if_empty
 from server.store import db
 
@@ -54,6 +57,7 @@ async def lifespan(app: FastAPI):
         log.warning("required env vars missing: %s — auth/AI will fail until set (Studio Secrets)", ", ".join(settings.missing_required))
     db.run_migrations()
     seed_if_empty()
+    runner.start()  # thread pool + fail jobs left running by an earlier process
     threading.Thread(target=ms_loop, daemon=True).start()
     if settings.whisper_preload and settings.enable_transcription:
         from server.ai import trigger_whisper_load
@@ -68,6 +72,7 @@ errors.register_error_handlers(app)
 for r in (
     health.router,
     auth.router,
+    chat.router,
     me.router,
     subjects.router,
     dashboard.router,
@@ -77,11 +82,21 @@ for r in (
     schedule.router,
     forum.router,
     points.router,
+    projects.router,
     notifications.router,
     files.router,
-    probe_p0.router,
+    summaries.router,
 ):
     app.include_router(r)
+
+
+# BUG-21: never let a browser/proxy cache API responses (stale calendar).
+@app.middleware("http")
+async def _no_store_api(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 # --- static SPA (SPEC §13: relative URLs, SPA fallback) --------------------------

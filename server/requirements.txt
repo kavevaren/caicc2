@@ -1,6 +1,13 @@
-# Orvina P0 stack — pinned (SPEC §13). Python 3.10 in the image.
+# Orvina P0/P1 stack — pinned (SPEC §13). Python 3.10 in the image.
+# faster-whisper removed: F2 / audio-video input is a scope cut (ENABLE_TRANSCRIPTION=false).
 fastapi==0.116.2
 uvicorn[standard]==0.35.0
 openai==1.109.1
-faster-whisper==1.2.1
 python-multipart==0.0.20
+# L2 auth (SPEC §4.1, _LEAN §4 pre-approved):
+bcrypt==5.0.0
+# L1 (SPEC §10.1 extraction, _LEAN §4 pre-approved):
+pypdf==6.21.4
+python-pptx==1.0.2
+python-docx==1.2.0
+Pillow==12.3.0

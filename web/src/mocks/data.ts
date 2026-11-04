@@ -7,7 +7,26 @@
  */
 import type { components } from "../lib/api-types";
 
-type S = components["schemas"];
+declare namespace S {
+  export type Author = components["schemas"]["Author"];
+  export type Event = components["schemas"]["Event"];
+  export type User = components["schemas"]["User"];
+  export type Me = components["schemas"]["Me"];
+  export type AuthResponse = components["schemas"]["AuthResponse"];
+  export type Subject = components["schemas"]["Subject"];
+  export type Question = components["schemas"]["Question"];
+  export type QuestionDetail = components["schemas"]["QuestionDetail"];
+  export type QuestionList = components["schemas"]["QuestionList"];
+  export type Document = components["schemas"]["Document"];
+  export type Figure = components["schemas"]["Figure"];
+  export type DocumentList = components["schemas"]["DocumentList"];
+  export type Job = components["schemas"]["Job"];
+  export type JobRef = components["schemas"]["JobRef"];
+  export type Dashboard = components["schemas"]["Dashboard"];
+  export type Leaderboard = components["schemas"]["Leaderboard"];
+  export type NotificationList = components["schemas"]["NotificationList"];
+  export type Suggestion = components["schemas"]["Suggestion"];
+}
 
 /* ------------------------------------------------------------------ authors */
 
@@ -287,10 +306,13 @@ export const mockQuestionList: S.QuestionList = {
 
 /* ------------------------------------------------------------------ documents */
 
-/** Document with a free-form `extra` (the contract leaves it unstructured). */
-export type DocumentMock = Omit<S.Document, "extra"> & { extra: Record<string, unknown> };
+/** Document with a free-form `extra` (the contract types it as `Record<string, never>`; mocks widen it). */
+export type DocumentMock = Omit<S.Document, "extra"> & { extra?: Record<string, unknown> };
 
-const figChart: S.Figure = {
+/** Figure with a free-form `chart_spec` (the contract types it as `Record<string, never>`; mocks widen it). */
+type FigureMock = Omit<S.Figure, "chart_spec"> & { chart_spec?: Record<string, unknown> | null };
+
+const figChart: FigureMock = {
   ref_no: 1,
   kind: "chart",
   source_label: "Gambar 1",
@@ -418,7 +440,7 @@ export const mockDocuments: DocumentMock[] = [
   docIntegralParsial,
 ];
 
-export const mockDocumentList: S.DocumentList = {
+export const mockDocumentList: Omit<S.DocumentList, "items"> & { items: DocumentMock[] } = {
   items: mockDocuments,
   total: 17,
   page: 1,

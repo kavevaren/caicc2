@@ -26,6 +26,9 @@ __pycache__/
 web/node_modules/
 web/dist/
 
+# User's Studio-clone dir (not part of the app).
+Orviva/
+
 # Local build artifacts and misc.
 orvina-prompt-pack-v5.zip
 orvina-web/

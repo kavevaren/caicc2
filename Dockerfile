@@ -17,12 +17,9 @@ RUN apt-get update \
 WORKDIR /app
 COPY server/requirements.txt ./server/requirements.txt
 RUN pip install --no-cache-dir -r server/requirements.txt
-# Optional whisper pre-download into /opt/models (SPEC §9.2 source order).
-# `|| true` so a slow or blocked build network never breaks the image build.
-RUN python -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8', download_root='/opt/models')" \
-    || echo "whisper pre-download skipped (build network blocked?)"
+# whisper pre-download removed: F2 / audio-video input is a scope cut
+# (ENABLE_TRANSCRIPTION=false, faster-whisper no longer a dependency).
 COPY server/ ./server/
-COPY contracts/ ./contracts/
 COPY --from=web /app/web/dist /app/web/dist
 EXPOSE 7860
 # Shell form so ${PORT} expands; one worker, proxy headers from the Studio proxy.

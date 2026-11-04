@@ -60,7 +60,9 @@ def load_settings() -> Settings:
         port=_int("PORT", PORT_DEFAULT),
         public_app_url=os.environ.get("PUBLIC_APP_URL", ""),
         data_dir=data_dir(),
-        enable_transcription=_bool("ENABLE_TRANSCRIPTION", True),
+        # Scope cut: F2 / audio-video input dropped, so transcription is OFF by
+        # default. Every feature must still work with it off (SPEC §2.3).
+        enable_transcription=_bool("ENABLE_TRANSCRIPTION", False),
         whisper_model=os.environ.get("WHISPER_MODEL", WHISPER_MODEL_DEFAULT),
         whisper_preload=_bool("WHISPER_PRELOAD", False),
         max_media_minutes=_int("MAX_MEDIA_MINUTES", MAX_MEDIA_MINUTES_DEFAULT),

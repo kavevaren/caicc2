@@ -1,59 +1,113 @@
-# Orvina prompt pack v5 (Python + React, built for ModelScope Studio)
+# Orvina
 
-Updated 31 Oct 2026. This pack replaces v4. Changes from v4:
-- **No Go gateway.** One Python FastAPI process serves the React build, the API, SQLite, jobs and the AI, so the Studio runs one container with one process on the free CPU.
-- **No live captions** (Presentasi langsung, floating window, WebSocket). F2 keeps Rekam and Unggah, and can also import transcript files (.srt, .vtt, .txt).
-- **faster-whisper is at risk** under the competition rules (only 4 models allowed). Every feature must work with `ENABLE_TRANSCRIPTION=false`; P6 decides based on the organizers' answer.
+**Orvina** is a study companion for Indonesian students. Upload your class notes — PDF, PPTX, DOCX, TXT/MD or photos of pages — and Orvina turns them into a clean Markdown summary with LaTeX formulas and code blocks, saved in your personal library (Perpustakaan) with search and `.md` export. The dashboard greets you with real data: how many summaries you have, and the week ahead. One Docker image, one Python process, deployed on a free-CPU ModelScope Studio, using only the four competition models.
 
-The old prompt pack is in `prompts/prompt.zip` as prompting-history evidence; do not run it.
+## Screenshots
 
-## Architecture in one line
-React/TypeScript animated UI → Python FastAPI server (API, accounts, forum, points, calendar, jobs, SQLite, 4 ModelScope models, documents, figures, charts). One Docker image, one process on ModelScope Studio. Details: `SPEC.md` §3 and §13.
+| Login | Dashboard |
+|---|---|
+| ![login](docs/evidence/screenshots/login-light-1280.png) | ![dashboard](docs/evidence/screenshots/dashboard-light-1280.png) |
 
-## Files
+| Ringkas Materi | Perpustakaan |
+|---|---|
+| ![summarize](docs/evidence/screenshots/summarize-light-1280.png) | ![library](docs/evidence/screenshots/library-light-1280.png) |
 
-| File | What it is | Goes into the repo as |
+| DocumentView (LaTeX) | Dashboard at 400 px |
+|---|---|
+| ![document](docs/evidence/screenshots/documentview-light-1280.png) | ![dashboard400](docs/evidence/screenshots/dashboard-400.png) |
+
+The design target is `docs/design/dashboard-mockup.html`; a side-by-side capture is in
+`docs/evidence/screenshots/mockup-vs-dashboard.png`.
+
+## Architecture (SPEC §3.2, lean)
+
+```
+Browser (React SPA, usually inside the Studio iframe)
+   │  HTTPS JSON · job progress by polling (2 s)
+   ▼
+server (Python, FastAPI, uvicorn --workers 1, 0.0.0.0:7860, the only port)
+   ├─ serves web/dist (SPA fallback) and /api/*
+   ├─ store/: SQLite (users, sessions, subjects, jobs, documents, event_suggestions, ai_calls)
+   ├─ api/: routers per area (auth, me, subjects, summaries, jobs, documents, dashboard),
+   │        Bearer sessions, rate limits, contract error JSON
+   ├─ jobs/: thread pool (JOB_WORKERS = 2) running the summarize pipeline
+   └─ ai/: LLM client (4 models, roles, retries, JSON repair, call tracing),
+           extraction (PDF/PPTX/DOCX/TXT/images), summarize (6 stages)
+Disk: DATA_DIR (/data if writable, else /tmp/orvina): orvina.db, uploads/
+```
+
+- **One process.** No supervisor, no internal port. Startup: migrate → seed if empty → listen.
+- **AI isolation.** Only `server/ai/llm.py` imports `openai` and calls a model, via
+  `https://api-inference.modelscope.ai/v1` (SPEC §2.1). The browser never calls an LLM.
+- **SQLite.** One connection per thread; every write goes through `store.db.write()` under one lock.
+
+## Setup
+
+```bash
+# Backend (Python 3.10+ in the image; any recent CPython locally)
+uv venv .venv && uv pip install -p .venv -r server/requirements.txt
+cp .env.example .env            # fill MODELSCOPE_TOKEN + APP_SECRET_KEY
+
+# Frontend
+cd web && npm install
+
+# Run
+make dev                        # FastAPI on 0.0.0.0:7860
+make test                       # pytest server/tests
+make lint                       # ruff + tsc + locale parity (id/en)
+make build                      # web production bundle
+make compliance                 # SPEC §12 scan
+```
+
+No Docker is required locally; the first real image build happens on the Studio.
+
+## Environment variables (SPEC §4.1)
+
+| Variable | Required | Meaning |
 |---|---|---|
-| `SPEC.md` | Product, rules, architecture, data, API, pipelines, quality bar, deploy | `docs/SPEC.md` |
-| `DESIGN.md` | UI tokens and the animated atom system, page by page | `docs/design/DESIGN.md` |
-| `design/dashboard-mockup.html` | Approved static Dashboard (open it in a browser) | `docs/design/dashboard-mockup.html` |
-| `BRAND.md`, `brand/` | Name, tagline, logo SVGs | `assets/brand/` |
-| `FEATURES.md` | Feature list (for the README, pitch and demo video) | — |
-| `prompts/_RULES.md` | Rules the agent follows in every phase | `prompts/` |
-| `prompts/P0` … `P6` | The build, one phase per prompt | `prompts/` |
+| `MODELSCOPE_TOKEN` | yes | ModelScope API token. In the Studio: a Studio Secret. Never in code, logs, docs or the bundle. |
+| `APP_SECRET_KEY` | yes | Session/secret key. Studio Secret. |
+| `DATA_DIR` | no | Data directory; falls back to `/data` if writable, else `/tmp/orvina`. An empty DB is migrated and seeded automatically. |
+| `JOB_WORKERS` | no | Summarize thread pool size (default 2, free CPU). |
+| `ENABLE_TRANSCRIPTION` | no | `false` by default and in the submission (scope cut; see Known limits). |
+| `PROBE_MODEL` | no | Which allowed model the health probe pings (default the FAST role). |
 
-## How to run it
+## Model roles (SPEC §2.1)
 
-1. Use Claude Code (or OpenCode) configured with one of the 4 approved models, as in STEP C of the participant guide. Check that the model name is visible in the agent, and take screenshots as you go.
-2. First message to the coding agent:
-   > Read `prompts/_RULES.md`, `SPEC.md`, `DESIGN.md` and `design/dashboard-mockup.html`. Then do `prompts/P0-platform-probe.md` only, and report.
-3. After each report, check the result in the browser, then send the next prompt: "Lanjut: `prompts/P1-…md`".
-4. **P2, P3 and P4 can run at the same time** in three agent sessions (you and your friend), because P1 fixes the contract. Each lane touches only its own folders:
-   - P2: `server/ai/`;
-   - P3: `server/api/`, `server/store/`, `server/jobs/`, `server/domain/`, `server/main.py`;
-   - P4: `web/`.
+| Role | Model | Used for |
+|---|---|---|
+| VISION | `Qwen/Qwen3.8-27B` | Reading image uploads (photos of pages) |
+| FAST | `Qwen/Qwen3.8-27B` | Health probe (Step-3.5-Flash is unavailable on the API: "no provider supported") |
+| REASON | `deepseek-ai/DeepSeek-V4-Pro-0813` | Map/reduce summarization, deadline extraction |
+| CHECK | `zai-org/GLM-5.2` | Format check (LaTeX fences, code fences) with one repair retry |
 
-| Phase | Lane | When | Gate |
-|---|---|---|---|
-| P0 platform probe | — | Sat 31 Oct afternoon | Stop if the Studio does not accept Docker (Gradio fallback, SPEC §13) |
-| P1 contract + skeleton | — | Sat 31 Oct night | |
-| P2 AI modules (Python) | A | Sun 1 Nov | |
-| P3 API, data, jobs (Python) | B | Sun 1 – Mon 2 Nov | **Mon 12:00:** auth, events and forum green |
-| P4 web + Dashboard (TS) | C | Sun 1 – Mon 2 Nov | |
-| P5 feature pages + e2e | — | Mon 2 – Tue 3 Nov | **Tue 12:00 go/no-go:** otherwise submit the old Streamlit app (`CAICC #2`) |
-| P6 polish + ship | — | Tue 3 Nov → Wed 4 Nov, 16:00–23:59 WIB | |
+## Competition compliance (SPEC §2 → where it is enforced)
 
-**Cut order if time runs out:**
-1. scroll-linked dashboard effects;
-2. forum video answers;
-3. charts;
-4. Google OAuth (keep local mode);
-5. Rekam in the browser (keep Unggah).
+| Rule | Enforced by |
+|---|---|
+| 1. Only the 4 allowed models, via the ModelScope gateway | Model IDs exist only in `server/ai/llm.py` (`ALLOWED_MODELS` + role map); `scripts/compliance.py` scans every file for any other model ID; no model ID anywhere in `web/` |
+| 2. No proprietary AI, no Web Speech API | `llm.py` is the only HTTP AI client (ModelScope base URL); `scripts/compliance.py` scans all code for forbidden AI domains and `SpeechRecognition`/`webkitSpeechRecognition`; the web bundle has no speech UI |
+| 3. faster-whisper at risk → ship with it off | `faster-whisper` removed from `server/requirements.txt`; `ENABLE_TRANSCRIPTION` defaults to `false` in `server/config.py`; `/api/health` reports `whisper: "disabled"` |
+| 4. No training, no GPU, free CPU only | Single uvicorn worker (`Dockerfile` CMD), CPU-only dependencies, no training/fine-tuning code anywhere |
+| 5. No secrets in code | Env vars only via `server/config.py`; `.env` is git- and docker-ignored; `scripts/compliance.py` scans for token-like strings in code, logs, tests, bundle and docs; the Studio uses Studio Secrets |
+| 6. Agent-written code, ≤30 `MANUAL` lines | All code written by the agent (OpenCode, `Qwen/Qwen3.8-27B`); the agent never writes the `MANUAL` marker; `scripts/compliance.py` caps the count at 30 (current count: 16, all in rule descriptions, none in code) |
+| 7. Studio stays Public, serves several judges | One process on port 7860; SQLite with per-thread connections + a single write lock; deploy steps in `docs/PROGRESS.md` ("Manual checks for the developer") set visibility Public |
 
-Never cut: the 4-model rule, the week atom with zoom, F1, F2 upload.
+## Libraries and licenses
 
-## Before you start
-- A **valid ModelScope token** in `.env` and in the Studio Secret (the 30 Oct test failed with 401 on every AI call).
-- **Ask the organizers in the WhatsApp group** whether faster-whisper (open-source, CPU) is allowed, and keep a screenshot of the answer. Write the answer under "Assumptions" in `docs/PROGRESS.md`.
-- Keep the old Streamlit folder untouched until Tuesday's gate passes.
-- Every phase appends to the "Prompt log" section of `docs/PROGRESS.md`. Keep the agent screenshots with the model name visible; they are submission evidence.
+- **Python:** fastapi, uvicorn, openai (OpenAI-compatible client for the ModelScope gateway), bcrypt, pypdf, python-pptx, python-docx, Pillow — BSD/MIT licensed.
+- **Web:** react, react-dom, react-router-dom, react-markdown, remark-math, remark-gfm, rehype-katex, katex (MIT), lucide-react (ISC), @fontsource/outfit + @fontsource/inter (OFL), Vite + TypeScript (MIT).
+- **Fonts:** Outfit (headings/numbers) and Inter (body), self-hosted via Fontsource — no web-font CDN, so the Studio iframe works offline of third parties.
+
+License: Apache-2.0.
+
+## Known limits (honest scope cut)
+
+- **No audio or video.** F2 (Rekam & Transkrip) is cut; `faster-whisper` is not installed and `ENABLE_TRANSCRIPTION=false` in the submission.
+- **No figures or charts** in summaries (the pipeline returns `figures: []`).
+- **No Google Calendar** — the "7 hari ke depan" agenda is local (deadlines extracted from summaries), no OAuth.
+- **No forum, points, leaderboard or notifications** — those endpoints return `501 not_implemented` per the contract and are hidden from the UI.
+- **Polling only** — job progress is polled every 2 s (no SSE).
+- **Languages:** `id` and `en` only (`zh` cut).
+- **Data may reset.** The SQLite DB and uploads live on the Studio's disk (`DATA_DIR`); a Studio restart or redeploy can wipe them, and the app re-seeds the demo data on an empty DB.
+- **Free CPU.** Summaries run in a 2-worker thread pool; expect roughly 1–3 minutes per document depending on size.

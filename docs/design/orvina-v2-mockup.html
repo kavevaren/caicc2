@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<!--
+  Orvina | Mockup v2: Jadwal, Ringkasan (proyek), Tanya
+  - Visual reference only. Sample data is fake. Nothing here calls an API or a model.
+  - Colours and type come from tokens.css / DESIGN.md (no new colours).
+  - Motion: the week atom slides one step per day (360/7 deg) and makes a full
+    revolution when the week changes. Everything stops under prefers-reduced-motion.
+  - Note: _LEAN.md section 3 currently forbids orbit motion in the app. Building this
+    motion needs that rule changed first.
+-->
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orvina | Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1B6CA8; --primary-hover: #15588A; --on-primary: #FFFFFF; --primary-tint: #E7F0F7;
+  --accent: #F4A261;
+  --success: #2D6A4F; --success-tint: #E6F2EC;
+  --warning-text: #8A6100; --warning-tint: #FBF3DC;
+  --danger: #C0392B; --on-danger: #FFFFFF; --danger-tint: #FBE9E7;
+  --text: #1A1A2E; --muted: #5A5A72; --bg: #FAFAF7; --surface: #FFFFFF;
+  --border: #E2E2DC; --border-strong: #8E8EA3; --orbit: #CBD9E6; --logo-stroke: #1B6CA8;
+  --r-lg: 16px; --r-md: 10px; --r-sm: 6px;
+  --fast: 150ms; --ease: cubic-bezier(.2,.8,.2,1);
+}
+[data-theme="dark"] {
+  --primary: #4DA8DA; --primary-hover: #6BBDE8; --on-primary: #12121A; --primary-tint: #1B2E3E;
+  --success: #52B788; --success-tint: #1A2E27;
+  --warning-text: #E9C46A; --warning-tint: #2E2A1C;
+  --danger: #F06A5E; --on-danger: #12121A; --danger-tint: #3A2024;
+  --text: #E8E8F0; --muted: #9898B0; --bg: #12121A; --surface: #1E1E2E;
+  --border: #2E2E42; --border-strong: #6E6E8C; --orbit: #2F4A60; --logo-stroke: #4DA8DA;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; font-size: 15px; line-height: 1.55; background: var(--bg); color: var(--text); }
+h1, h2, h3, .num { font-family: 'Outfit', 'Inter', sans-serif; letter-spacing: -0.01em; }
+h1 { font-size: 28px; font-weight: 600; }
+h2 { font-size: 18px; font-weight: 600; }
+h3 { font-size: 15px; font-weight: 600; }
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: var(--r-sm); }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 16px; height: 16px; }
+.meta { color: var(--muted); font-size: 13px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Shell ---------- */
+.app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 12px; z-index: 30; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; margin-bottom: 24px; }
+.brand svg { width: 34px; height: 34px; }
+.brand span { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 22px; }
+.nav { list-style: none; display: grid; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: var(--r-md); color: var(--muted); font-weight: 500; transition: background var(--fast), color var(--fast); }
+.nav a:hover { background: var(--bg); color: var(--text); }
+.nav a[aria-current="page"] { background: var(--primary-tint); color: var(--text); font-weight: 600; }
+.nav a[aria-current="page"] svg { color: var(--primary); }
+.me { margin-top: auto; border-top: 1px solid var(--border); padding: 16px 12px 0; display: flex; align-items: center; gap: 12px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-tint); color: var(--primary); display: grid; place-items: center; font-weight: 600; font-size: 13px; flex: none; }
+.me .who { display: grid; line-height: 1.3; }
+.me .who span { font-size: 13px; color: var(--muted); }
+.me .logout { margin-left: auto; font-size: 13px; color: var(--muted); min-height: 44px; padding: 0 8px; border-radius: var(--r-md); }
+.me .logout:hover { color: var(--text); }
+
+.main { min-width: 0; padding: 24px 32px 48px; }
+.top { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.top .sub { color: var(--muted); font-size: 15px; }
+.tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.lang { display: flex; border: 1px solid var(--border-strong); border-radius: var(--r-md); overflow: hidden; }
+.lang button { min-height: 44px; min-width: 44px; padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.lang button[aria-pressed="true"] { background: var(--primary-tint); color: var(--primary); }
+.icon-btn { width: 44px; height: 44px; border-radius: var(--r-md); border: 1px solid var(--border-strong); display: grid; place-items: center; transition: border-color var(--fast); }
+.icon-btn:hover { border-color: var(--primary); }
+.theme-btn .moon, [data-theme="dark"] .theme-btn .sun { display: none; }
+[data-theme="dark"] .theme-btn .moon { display: block; }
+.menu-btn { display: none; }
+.scrim { display: none; }
+
+/* ---------- Building blocks ---------- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 20px 24px; min-width: 0; }
+.card-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.card-h .link { margin-left: auto; font-size: 13px; color: var(--primary); font-weight: 600; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--r-md); border: 1px solid var(--border-strong); background: var(--surface); font-weight: 600; white-space: nowrap; transition: border-color var(--fast), background var(--fast); }
+.btn:hover { border-color: var(--primary); }
+.btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--text); background: var(--bg); }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--bg); border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+.chip.blue { background: var(--primary-tint); border-color: transparent; color: var(--primary); }
+.chip.green { background: var(--success-tint); border-color: transparent; color: var(--success); }
+.chip.amber { background: var(--warning-tint); border-color: transparent; color: var(--warning-text); }
+.chip.red { background: var(--danger-tint); border-color: transparent; color: var(--danger); }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; font-weight: 600; }
+.input { min-height: 44px; width: 100%; padding: 0 12px; border-radius: var(--r-md); border: 1px solid var(--border-strong); background: var(--surface); }
+textarea.input { padding: 10px 12px; resize: vertical; }
+.page { display: none; }
+.page.on { display: block; }
+
+/* ---------- Jadwal ---------- */
+.sched-top { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.atom-card { display: grid; grid-template-rows: auto 1fr auto; }
+.atom-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.atom-head .num { font-size: 22px; font-weight: 600; }
+.stepper { margin-left: auto; display: flex; gap: 4px; }
+.stepper .icon-btn { width: 40px; height: 44px; border-color: var(--border); }
+.orbit-svg { width: 100%; height: auto; display: block; margin: 8px 0; overflow: visible; }
+.orbit-svg .ring { fill: none; stroke: var(--orbit); stroke-width: 2; }
+.orbit-svg .ring2 { fill: none; stroke: var(--orbit); stroke-width: 1.5; opacity: .5; }
+.orbit-svg .core { fill: var(--accent); }
+.orbit-svg .core-label { font: 600 12px 'Outfit', sans-serif; fill: var(--muted); text-anchor: middle; }
+.planet { cursor: pointer; }
+.planet .p { stroke-width: 1.5; transition: r var(--fast); }
+.planet .p.busy { fill: var(--primary); stroke: var(--primary); }
+.planet .p.free { fill: var(--surface); stroke: var(--border-strong); }
+.planet .sel { fill: none; stroke: var(--accent); stroke-width: 3; }
+.planet text { font: 500 12px 'Inter', sans-serif; fill: var(--muted); text-anchor: middle; }
+.planet.is-sel text { fill: var(--text); font-weight: 700; }
+.planet .badge { font: 600 10px 'Outfit', sans-serif; fill: var(--on-primary); }
+.day-strip { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 12px; }
+.day-strip strong { font-family: 'Outfit', sans-serif; font-size: 18px; }
+
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.cal-head h2 { margin-right: auto; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal .dow { font-size: 12px; font-weight: 600; color: var(--muted); padding: 4px 0; }
+.cal button { aspect-ratio: 1; min-width: 0; min-height: 36px; border-radius: var(--r-md); font-size: 14px; font-variant-numeric: tabular-nums; position: relative; transition: background var(--fast); }
+.cal button:hover { background: var(--bg); }
+.cal button.out { color: var(--border-strong); }
+.cal button.today { box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
+.cal button.sel { background: var(--primary); color: var(--on-primary); font-weight: 700; }
+.cal button .dots { position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%); display: flex; gap: 2px; }
+.cal button .dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
+.cal button.sel .dots i { background: var(--on-primary); }
+.cal-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+.sched-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.list { list-style: none; display: grid; gap: 4px; }
+.row { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: start; padding: 10px 8px; border-radius: var(--r-md); }
+.row:hover { background: var(--bg); }
+.row .time { font-family: 'Outfit', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; }
+.row .t { font-weight: 600; }
+.row .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.ev { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 10px 8px; border-radius: var(--r-md); align-items: center; }
+.ev:hover { background: var(--bg); }
+.ev .date { text-align: center; border-radius: var(--r-md); background: var(--primary-tint); color: var(--primary); padding: 4px 0; line-height: 1.15; }
+.ev .date b { display: block; font-family: 'Outfit', sans-serif; font-size: 20px; }
+.ev .date small { font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.todo { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 4px 8px; border-radius: var(--r-md); cursor: pointer; }
+.todo:hover { background: var(--bg); }
+.todo input { width: 20px; height: 20px; accent-color: var(--primary); flex: none; cursor: pointer; }
+.todo .txt { flex: 1; min-width: 0; }
+.todo.done .txt { text-decoration: line-through; color: var(--muted); }
+.todo-add { display: flex; gap: 8px; margin-top: 8px; }
+.progress { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 12px; }
+.progress > i { display: block; height: 100%; background: var(--success); transition: width var(--fast); }
+
+.add-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.drop { border: 2px dashed var(--border-strong); border-radius: var(--r-lg); padding: 24px; text-align: center; display: grid; gap: 8px; place-items: center; transition: border-color var(--fast), background var(--fast); cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--primary); background: var(--primary-tint); }
+.drop .types { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.found { display: grid; gap: 8px; margin-top: 12px; }
+.found .f { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-md); }
+.found .f .grow { flex: 1; min-width: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--primary-tint); border-color: var(--primary); color: var(--primary); }
+
+/* ---------- Ringkasan / Proyek ---------- */
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.search { position: relative; flex: 1; min-width: 200px; max-width: 420px; }
+.search svg { position: absolute; left: 12px; top: 12px; color: var(--muted); }
+.search .input { padding-left: 40px; }
+.projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.proj { display: grid; gap: 12px; cursor: pointer; text-align: left; transition: border-color var(--fast); }
+.proj:hover, .proj[aria-pressed="true"] { border-color: var(--primary); }
+.proj[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--primary); }
+.proj .folder { width: 44px; height: 44px; border-radius: var(--r-md); display: grid; place-items: center; }
+.proj .folder.blue { background: var(--primary-tint); color: var(--primary); }
+.proj .folder.green { background: var(--success-tint); color: var(--success); }
+.proj .folder.amber { background: var(--warning-tint); color: var(--warning-text); }
+.proj .stack { display: flex; }
+.proj .stack span { width: 28px; height: 34px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); margin-right: -10px; }
+.proj .foot { display: flex; align-items: center; gap: 8px; }
+.proj .foot .meta { margin-left: auto; }
+.proj.new { border-style: dashed; border-color: var(--border-strong); place-items: center; text-align: center; color: var(--muted); min-height: 172px; }
+.proj.new:hover { color: var(--primary); }
+.proj-open { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+.doc-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 8px; border-radius: var(--r-md); border-bottom: 1px solid var(--border); }
+.doc-row:last-child { border-bottom: 0; }
+.doc-row:hover { background: var(--bg); }
+.doc-row .ic { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--primary-tint); color: var(--primary); display: grid; place-items: center; }
+.doc-row .t { font-weight: 600; }
+.handle { color: var(--border-strong); cursor: grab; }
+.side-stat { display: grid; gap: 12px; }
+.side-stat .s { display: flex; justify-content: space-between; align-items: baseline; }
+.side-stat .s b { font-family: 'Outfit', sans-serif; font-size: 22px; }
+
+/* ---------- Tanya (chat) ---------- */
+.chat { display: grid; grid-template-columns: 260px minmax(0, 1fr); height: calc(100vh - 140px); min-height: 520px; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+.threads { border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 12px; gap: 8px; min-height: 0; }
+.threads .btn { width: 100%; }
+.threads .grp { font-size: 12px; font-weight: 600; color: var(--muted); padding: 8px 8px 0; }
+.threads ul { list-style: none; display: grid; gap: 2px; overflow-y: auto; }
+.threads a { display: block; padding: 10px 12px; border-radius: var(--r-md); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.threads a:hover { background: var(--bg); color: var(--text); }
+.threads a[aria-current="true"] { background: var(--primary-tint); color: var(--text); font-weight: 600; }
+.convo { display: flex; flex-direction: column; min-height: 0; }
+.convo-h { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.convo-h h2 { margin-right: auto; }
+.msgs { flex: 1; overflow-y: auto; padding: 24px 20px; }
+.msgs-in { max-width: 760px; margin: 0 auto; display: grid; gap: 24px; }
+.msg { display: grid; grid-template-columns: 32px 1fr; gap: 12px; }
+.msg .who { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; }
+.msg.ai .who { background: var(--primary-tint); }
+.msg.ai .who svg { width: 22px; height: 22px; }
+.msg.me { grid-template-columns: 1fr; justify-items: end; }
+.msg.me .bubble { background: var(--primary-tint); padding: 10px 16px; border-radius: 18px 18px 4px 18px; max-width: 80%; }
+.msg.ai .body { display: grid; gap: 10px; }
+.msg.ai .body p, .msg.ai .body li { line-height: 1.65; }
+.msg.ai .body ol, .msg.ai .body ul { padding-left: 20px; display: grid; gap: 4px; }
+.msg.ai .body .formula { font-family: 'Times New Roman', serif; font-style: italic; font-size: 18px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px; text-align: center; }
+.msg.ai .body pre { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px; overflow-x: auto; font-size: 13px; }
+.srcs { display: flex; gap: 6px; flex-wrap: wrap; }
+.msg-actions { display: flex; gap: 2px; }
+.msg-actions button { width: 36px; height: 36px; border-radius: var(--r-md); color: var(--muted); display: grid; place-items: center; }
+.msg-actions button:hover { background: var(--bg); color: var(--text); }
+.thinking { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; }
+.thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); animation: blink 1.2s infinite; }
+.thinking i:nth-child(2) { animation-delay: .2s; } .thinking i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.composer-wrap { padding: 12px 20px 16px; }
+.composer { max-width: 760px; margin: 0 auto; border: 1px solid var(--border-strong); border-radius: 20px; padding: 8px; background: var(--surface); transition: border-color var(--fast); }
+.composer:focus-within { border-color: var(--primary); }
+.composer textarea { width: 100%; border: 0; background: transparent; resize: none; padding: 8px 10px; min-height: 44px; max-height: 160px; outline: none; }
+.composer .bar { display: flex; align-items: center; gap: 6px; }
+.composer .bar .send { margin-left: auto; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.composer .bar .send:hover { background: var(--primary-hover); }
+.composer .ctx { min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.composer .ctx:hover { border-color: var(--primary); color: var(--text); }
+.hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.starters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.starters button { text-align: left; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--r-md); font-size: 14px; }
+.starters button:hover { border-color: var(--primary); }
+.starters button span { display: block; color: var(--muted); font-size: 13px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .sched-top { grid-template-columns: 1fr; }
+  .sched-grid { grid-template-columns: 1fr 1fr; }
+  .sched-grid > :last-child { grid-column: 1 / -1; }
+  .proj-open { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: fixed; left: 0; top: 0; width: 280px; transform: translateX(-100%); transition: transform 150ms var(--ease); }
+  .sidebar.open { transform: none; }
+  .scrim.on { display: block; position: fixed; inset: 0; background: rgba(18,18,26,.45); z-index: 20; }
+  .menu-btn { display: grid; }
+  .main { padding: 16px 16px 40px; }
+  .sched-top, .add-card { grid-template-columns: 1fr; }
+  .chat { grid-template-columns: 1fr; height: auto; }
+  .threads { display: none; }
+  .msgs { max-height: 60vh; }
+}
+@media (max-width: 560px) {
+  h1 { font-size: 24px; }
+  .top .sub, .lang { display: none; }
+  .sched-grid, .form-grid, .starters { grid-template-columns: 1fr; }
+  .card { padding: 16px; }
+  .msg.me .bubble { max-width: 92%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M20 19v3H6.5"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-dleft" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></symbol>
+  <symbol id="i-dright" viewBox="0 0 24 24"><path d="m13 17 5-5-5-5M6 17l5-5-5-5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4L15.6 7"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-forum" viewBox="0 0 24 24"><path d="M17 8h2a2 2 0 0 1 2 2v10l-3-3h-7a2 2 0 0 1-2-2v-1"/><path d="M15 3H5a2 2 0 0 0-2 2v10l3-3h9a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-atom" viewBox="0 0 512 512"><ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="var(--logo-stroke)" stroke-width="32" transform="rotate(-30 256 256)"/><ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="var(--logo-stroke)" stroke-width="32" transform="rotate(30 256 256)"/><circle cx="256" cy="256" r="34" fill="#F4A261"/></symbol>
+</svg>
+<a class="sr-only" href="#main">Lewati ke konten utama</a>
+<div class="app">
+  <div class="scrim" id="scrim" onclick="toggleMenu(false)"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
+    <div class="brand"><svg viewBox="0 0 512 512" aria-hidden="true"><use href="#i-atom"/></svg><span>Orvina</span></div>
+    <nav>
+      <ul class="nav">
+        <li><a href="#" data-go="none"><svg class="i" aria-hidden="true"><use href="#i-dashboard"/></svg>Dashboard</a></li>
+        <li><a href="#ringkasan" data-go="ringkasan"><svg class="i" aria-hidden="true"><use href="#i-doc"/></svg>Ringkasan</a></li>
+        <li><a href="#jadwal" data-go="jadwal" aria-current="page"><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg>Jadwal</a></li>
+        <li><a href="#tanya" data-go="tanya"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg>Tanya</a></li>
+        <li><a href="#" data-go="none"><svg class="i" aria-hidden="true"><use href="#i-forum"/></svg>Forum</a></li>
+        <li><a href="#" data-go="none"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Perpustakaan</a></li>
+      </ul>
+    </nav>
+    <div class="me">
+      <span class="avatar" aria-hidden="true">AL</span>
+      <div class="who"><strong>Aldo</strong><span>Teknik Informatika</span></div>
+      <button class="logout" type="button">Keluar</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="top">
+      <button class="icon-btn menu-btn" type="button" aria-label="Buka menu" onclick="toggleMenu()"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div>
+        <h1 id="page-title">Jadwal</h1>
+        <p class="sub" id="page-sub">Minggu ini mengorbit di sekitarmu</p>
+      </div>
+      <div class="tools">
+        <div class="lang" role="group" aria-label="Bahasa tampilan">
+          <button type="button" aria-pressed="true">ID</button>
+          <button type="button" aria-pressed="false">EN</button>
+        </div>
+        <button class="icon-btn theme-btn" type="button" aria-label="Ganti tema" onclick="toggleTheme()">
+          <svg class="i sun" aria-hidden="true"><use href="#i-sun"/></svg>
+          <svg class="i moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== JADWAL ===================== -->
+    <section class="page on" id="p-jadwal" aria-label="Jadwal">
+      <div class="sched-top">
+        <div class="card atom-card">
+          <div class="atom-head">
+            <div>
+              <p class="meta" id="week-label">Minggu ke-45</p>
+              <p class="num" id="week-range">2 – 8 November 2026</p>
+            </div>
+            <div class="stepper" role="group" aria-label="Pindah hari dan minggu">
+              <button class="icon-btn" type="button" aria-label="Minggu sebelumnya" onclick="shiftWeek(-1)"><svg class="i" aria-hidden="true"><use href="#i-dleft"/></svg></button>
+              <button class="icon-btn" type="button" aria-label="Hari sebelumnya" onclick="shiftDay(-1)"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+              <button class="btn" type="button" onclick="goToday()">Hari ini</button>
+              <button class="icon-btn" type="button" aria-label="Hari berikutnya" onclick="shiftDay(1)"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
+              <button class="icon-btn" type="button" aria-label="Minggu berikutnya" onclick="shiftWeek(1)"><svg class="i" aria-hidden="true"><use href="#i-dright"/></svg></button>
+            </div>
+          </div>
+          <svg class="orbit-svg" id="orbit" viewBox="0 0 400 220" role="img" aria-label="Orbit tujuh hari minggu ini">
+            <ellipse class="ring2" cx="200" cy="110" rx="150" ry="44" transform="rotate(-14 200 110)"/>
+            <ellipse class="ring" cx="200" cy="110" rx="165" ry="66"/>
+            <g id="behind"></g>
+            <circle class="core" cx="200" cy="110" r="13"/>
+            <g id="front"></g>
+          </svg>
+          <div class="day-strip" aria-live="polite">
+            <strong id="sel-day">Senin, 2 November</strong>
+            <span class="chip blue" id="sel-count">2 agenda</span>
+            <span class="meta" id="sel-next">Berikutnya 13.00 · UTS Kalkulus II</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cal-head">
+            <h2 id="cal-title">November 2026</h2>
+            <button class="icon-btn" type="button" aria-label="Bulan sebelumnya" onclick="shiftMonth(-1)"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+            <button class="icon-btn" type="button" aria-label="Bulan berikutnya" onclick="shiftMonth(1)"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
+          </div>
+          <div class="cal" id="cal" role="grid" aria-label="Kalender bulan"></div>
+          <div class="cal-legend">
+            <span><i style="background:var(--accent)"></i>Hari ini</span>
+            <span><i style="background:var(--primary)"></i>Ada agenda</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sched-grid">
+        <div class="card">
+          <div class="card-h"><h2>Kegiatan hari ini</h2><span class="chip" id="act-day">Sen 2 Nov</span></div>
+          <ul class="list" id="activities"></ul>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Acara mendatang</h2><a class="link" href="#">Lihat semua</a></div>
+          <ul class="list" id="events"></ul>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Tugas</h2><span class="meta" id="todo-count">2 dari 5 selesai</span></div>
+          <div class="progress"><i id="todo-bar" style="width:40%"></i></div>
+          <ul class="list" id="todos"></ul>
+          <form class="todo-add" onsubmit="addTodo(event)">
+            <label class="sr-only" for="todo-in">Tugas baru</label>
+            <input class="input" id="todo-in" placeholder="Tambah tugas…" autocomplete="off">
+            <button class="icon-btn" type="submit" aria-label="Tambah tugas"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" id="add">
+        <div class="card-h"><h2>Tambah jadwal</h2><span class="meta">Isi manual atau impor dari file</span></div>
+        <div class="add-card">
+          <form class="form-grid" onsubmit="event.preventDefault()">
+            <div class="field full"><label for="f-title">Judul</label><input class="input" id="f-title" placeholder="Contoh: Praktikum Basis Data"></div>
+            <div class="field full"><label>Jenis</label>
+              <div class="seg" role="group" aria-label="Jenis jadwal">
+                <button type="button" aria-pressed="true">Kegiatan</button>
+                <button type="button" aria-pressed="false">Acara</button>
+                <button type="button" aria-pressed="false">Tugas</button>
+                <button type="button" aria-pressed="false">Ujian</button>
+              </div>
+            </div>
+            <div class="field"><label for="f-date">Tanggal</label><input class="input" id="f-date" type="date" value="2026-11-04"></div>
+            <div class="field"><label for="f-time">Waktu</label><input class="input" id="f-time" type="time" value="09:00"></div>
+            <div class="field"><label for="f-place">Tempat</label><input class="input" id="f-place" placeholder="Ruang atau tautan"></div>
+            <div class="field"><label for="f-rep">Ulangi</label>
+              <select class="input" id="f-rep"><option>Tidak berulang</option><option>Setiap minggu</option><option>Setiap hari kerja</option></select>
+            </div>
+            <div class="full" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+              <button class="btn ghost" type="reset">Kosongkan</button>
+              <button class="btn primary" type="submit">Simpan jadwal</button>
+            </div>
+          </form>
+          <div>
+            <label class="drop" id="drop" for="f-file">
+              <svg class="i" aria-hidden="true" style="width:32px;height:32px;color:var(--primary)"><use href="#i-upload"/></svg>
+              <strong>Impor dari file</strong>
+              <span class="meta">Tarik file ke sini atau klik untuk memilih. Orvina membaca tanggal dan jam di dalamnya.</span>
+              <span class="types"><span class="chip">PDF</span><span class="chip">PNG</span><span class="chip">JPG</span><span class="chip">DOCX</span><span class="chip">XLSX</span><span class="chip">ICS</span></span>
+              <input type="file" id="f-file" class="sr-only" multiple accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.ics">
+            </label>
+            <div class="found" aria-label="Hasil impor">
+              <p class="meta">Ditemukan di <b>jadwal-uts.png</b> · periksa sebelum disimpan</p>
+              <div class="f"><span class="chip red">Ujian</span><div class="grow"><b>UTS Struktur Data</b><div class="meta">Rab 11 Nov · 08.00 · Gedung C 201</div></div><button class="icon-btn" type="button" aria-label="Terima"><svg class="i sm" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+              <div class="f"><span class="chip red">Ujian</span><div class="grow"><b>UTS Statistika</b><div class="meta">Jum 13 Nov · 10.00 · Gedung B 104</div></div><button class="icon-btn" type="button" aria-label="Terima"><svg class="i sm" aria-hidden="true"><use href="#i-check"/></svg></button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== RINGKASAN ===================== -->
+    <section class="page" id="p-ringkasan" aria-label="Ringkasan">
+      <div class="toolbar">
+        <div class="search"><svg class="i sm" aria-hidden="true"><use href="#i-search"/></svg><label class="sr-only" for="q-doc">Cari ringkasan</label><input class="input" id="q-doc" placeholder="Cari ringkasan atau proyek"></div>
+        <span class="chip blue">Semua</span><span class="chip">Kalkulus</span><span class="chip">Fisika</span><span class="chip">Struktur Data</span>
+        <button class="btn primary" type="button" style="margin-left:auto"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Ringkas materi baru</button>
+      </div>
+
+      <div class="card-h"><h2>Proyek</h2><span class="meta">Kumpulkan beberapa ringkasan dalam satu folder</span></div>
+      <div class="projects" id="projects"></div>
+
+      <div class="proj-open">
+        <div class="card">
+          <div class="card-h">
+            <svg class="i" aria-hidden="true" style="color:var(--primary)"><use href="#i-folder"/></svg>
+            <h2 id="proj-name">Persiapan UTS Kalkulus II</h2>
+            <span class="chip blue">Kalkulus</span>
+            <button class="btn" type="button" style="margin-left:auto"><svg class="i sm" aria-hidden="true"><use href="#i-plus"/></svg>Tambah ringkasan</button>
+          </div>
+          <div id="proj-docs"></div>
+        </div>
+        <div class="card side-stat">
+          <h2>Ringkasan proyek</h2>
+          <div class="s"><span class="meta">Ringkasan</span><b id="ps-docs">4</b></div>
+          <div class="s"><span class="meta">Sumber file</span><b>9</b></div>
+          <div class="s"><span class="meta">Tenggat terdeteksi</span><b>2</b></div>
+          <div class="s"><span class="meta">Diperbarui</span><span>2 jam lalu</span></div>
+          <button class="btn" type="button" onclick="go('tanya')"><svg class="i sm" aria-hidden="true"><use href="#i-chat"/></svg>Tanya tentang proyek ini</button>
+          <button class="btn ghost" type="button">Ekspor semua (.md)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== TANYA ===================== -->
+    <section class="page" id="p-tanya" aria-label="Tanya">
+      <div class="chat">
+        <aside class="threads" aria-label="Riwayat percakapan">
+          <button class="btn primary" type="button" onclick="newChat()"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Percakapan baru</button>
+          <p class="grp">Hari ini</p>
+          <ul>
+            <li><a href="#" aria-current="true">Turunan berantai dan contoh soal</a></li>
+            <li><a href="#">Beda stack dan queue</a></li>
+          </ul>
+          <p class="grp">7 hari terakhir</p>
+          <ul>
+            <li><a href="#">Hukum Newton II untuk bidang miring</a></li>
+            <li><a href="#">Rangkuman bab 3 Statistika</a></li>
+            <li><a href="#">Cara membaca big-O</a></li>
+          </ul>
+        </aside>
+        <div class="convo">
+          <div class="convo-h">
+            <h2 id="chat-title">Turunan berantai dan contoh soal</h2>
+            <span class="chip blue"><svg class="i sm" aria-hidden="true"><use href="#i-folder"/></svg>Persiapan UTS Kalkulus II</span>
+          </div>
+          <div class="msgs" id="msgs">
+            <div class="msgs-in" id="msgs-in">
+              <div class="msg me"><div class="bubble">Jelaskan aturan rantai dengan contoh, pakai materi dari ringkasanku.</div></div>
+              <div class="msg ai">
+                <span class="who" aria-hidden="true"><svg viewBox="0 0 512 512"><use href="#i-atom"/></svg></span>
+                <div class="body">
+                  <p>Aturan rantai dipakai saat fungsi tersusun dari fungsi lain, misalnya <i>f(g(x))</i>. Turunannya adalah turunan luar dikali turunan dalam:</p>
+                  <div class="formula">(f ∘ g)′(x) = f′(g(x)) · g′(x)</div>
+                  <p><b>Contoh.</b> Tentukan turunan <i>y = (3x² + 1)⁵</i>.</p>
+                  <ol>
+                    <li>Fungsi dalam: <i>u = 3x² + 1</i>, jadi <i>u′ = 6x</i>.</li>
+                    <li>Fungsi luar: <i>y = u⁵</i>, jadi <i>dy/du = 5u⁴</i>.</li>
+                    <li>Kalikan: <i>y′ = 5(3x² + 1)⁴ · 6x = 30x(3x² + 1)⁴</i>.</li>
+                  </ol>
+                  <p>Di ringkasanmu, pola ini muncul lagi pada soal latihan nomor 4 dan 7.</p>
+                  <div class="srcs"><span class="chip blue"><svg class="i sm" aria-hidden="true"><use href="#i-doc"/></svg>Turunan dan aplikasinya · Hal. 3</span><span class="chip blue"><svg class="i sm" aria-hidden="true"><use href="#i-doc"/></svg>Latihan UTS 2025 · Slide 12</span></div>
+                  <div class="msg-actions">
+                    <button type="button" aria-label="Salin jawaban"><svg class="i sm" aria-hidden="true"><use href="#i-copy"/></svg></button>
+                    <button type="button" aria-label="Buat ulang jawaban"><svg class="i sm" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+                    <button type="button" aria-label="Bagikan ke Forum"><svg class="i sm" aria-hidden="true"><use href="#i-forum"/></svg></button>
+                  </div>
+                </div>
+              </div>
+              <div class="msg me"><div class="bubble">Kasih satu soal latihan lagi, tapi jangan langsung kasih jawabannya.</div></div>
+              <div class="msg ai">
+                <span class="who" aria-hidden="true"><svg viewBox="0 0 512 512"><use href="#i-atom"/></svg></span>
+                <div class="body">
+                  <p>Coba ini: tentukan turunan <i>y = sin(x³ − 2x)</i>.</p>
+                  <ul>
+                    <li><b>Petunjuk 1:</b> fungsi luarnya sin, fungsi dalamnya polinom.</li>
+                    <li><b>Petunjuk 2:</b> turunan sin u adalah cos u.</li>
+                  </ul>
+                  <p>Kirim jawabanmu, nanti aku periksa langkah demi langkah.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="composer-wrap">
+            <form class="composer" onsubmit="send(event)">
+              <label class="sr-only" for="ask">Tulis pertanyaan</label>
+              <textarea id="ask" rows="1" placeholder="Tanyakan apa saja tentang materimu…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.requestSubmit();}"></textarea>
+              <div class="bar">
+                <button class="icon-btn" type="button" aria-label="Lampirkan file" style="width:40px;height:40px;border-color:var(--border)"><svg class="i sm" aria-hidden="true"><use href="#i-clip"/></svg></button>
+                <button class="ctx" type="button"><svg class="i sm" aria-hidden="true"><use href="#i-folder"/></svg>Konteks: Persiapan UTS Kalkulus II</button>
+                <button class="send" type="submit" aria-label="Kirim"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></button>
+              </div>
+            </form>
+            <p class="hint">Jawaban dibuat dari ringkasanmu dan bisa keliru. Cek lagi sumbernya.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------- Fake data ---------- */
+const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const DAYS_LONG = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+const TODAY = new Date(2026, 10, 2); // Senin 2 Nov 2026
+const key = d => d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const AGENDA = {
+  '2026-11-2': [['08.00', 'Kuliah Kalkulus II', 'Gedung B 302', 'blue', 'Kuliah'], ['13.00', 'UTS Kalkulus II', 'Gedung B 302', 'red', 'Ujian']],
+  '2026-11-3': [['10.00', 'Praktikum Struktur Data', 'Lab 2', 'blue', 'Praktikum']],
+  '2026-11-4': [['09.00', 'Kerja kelompok AI Ethics', 'Perpustakaan', 'green', 'Dari ringkasan'], ['15.30', 'Rapat himpunan', 'Daring', 'amber', 'Acara']],
+  '2026-11-6': [['23.59', 'Tenggat tugas Struktur Data', 'Unggah di LMS', 'red', 'Tenggat']],
+  '2026-11-7': [['19.00', 'Seminar karier teknologi', 'Aula utama', 'amber', 'Acara']],
+  '2026-11-10': [['08.00', 'Kuliah Statistika', 'Gedung A 210', 'blue', 'Kuliah']],
+  '2026-11-11': [['08.00', 'UTS Struktur Data', 'Gedung C 201', 'red', 'Ujian']],
+  '2026-11-13': [['10.00', 'UTS Statistika', 'Gedung B 104', 'red', 'Ujian']],
+  '2026-11-18': [['13.00', 'Presentasi AI Ethics', 'Gedung D 101', 'green', 'Dari ringkasan']],
+  '2026-11-25': [['09.00', 'Lomba CAICC', 'Daring', 'amber', 'Acara']]
+};
+const EVENTS = [['7', 'Nov', 'Seminar karier teknologi', 'Aula utama · 19.00'], ['14', 'Nov', 'Dies natalis kampus', 'Lapangan utama · 08.00'], ['25', 'Nov', 'Lomba CAICC', 'Daring · 09.00'], ['2', 'Des', 'Workshop UI/UX', 'Lab 3 · 13.00']];
+let TODOS = [['Ringkas bab 4 Kalkulus', true], ['Kerjakan latihan aturan rantai', true], ['Revisi laporan praktikum', false], ['Baca jurnal AI Ethics', false], ['Siapkan slide presentasi', false]];
+const PROJECTS = [
+  { name: 'Persiapan UTS Kalkulus II', subj: 'Kalkulus', c: 'blue', docs: ['Limit dan kekontinuan', 'Turunan dan aplikasinya', 'Integral tak tentu', 'Latihan UTS 2025'], t: '2 jam lalu' },
+  { name: 'Fisika Dasar: Mekanika', subj: 'Fisika', c: 'green', docs: ['Hukum Newton (versi ringkas)', 'Usaha dan energi', 'Momentum'], t: 'kemarin' },
+  { name: 'Struktur Data minggu 1–6', subj: 'Struktur Data', c: 'amber', docs: ['Array dan linked list', 'Stack dan queue', 'Tree', 'Graph', 'Hashing', 'Sorting'], t: '3 hari lalu' }
+];
+
+/* ---------- Week atom ---------- */
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CX = 200, CY = 110, RX = 165, RY = 66, STEP = 360 / 7;
+let weekStart = addDays(TODAY, -((TODAY.getDay() + 6) % 7)); // Senin
+let sel = (TODAY.getDay() + 6) % 7;                           // 0 = Senin … 6 = Minggu
+let rot = 90 - sel * STEP;                                    // selected planet sits at the front (90 deg)
+let anim = null;
+
+function drawOrbit() {
+  const behind = document.getElementById('behind'), front = document.getElementById('front');
+  let b = '', f = '';
+  for (let k = 0; k < 7; k++) {
+    const d = addDays(weekStart, k);
+    const a = (rot + k * STEP) * Math.PI / 180;
+    const x = CX + RX * Math.cos(a), y = CY + RY * Math.sin(a);
+    const depth = Math.sin(a);
+    const s = 0.78 + 0.22 * (depth + 1) / 2, op = 0.5 + 0.5 * (depth + 1) / 2;
+    const n = (AGENDA[key(d)] || []).length;
+    const r = (n ? (n >= 2 ? 9 : 8) : 6) * s;
+    const isSel = k === sel, isToday = key(d) === key(TODAY);
+    const lx = CX + (RX + 24) * Math.cos(a), ly = CY + (RY + 20) * Math.sin(a) + 4;
+    const g = `<g class="planet${isSel ? ' is-sel' : ''}" opacity="${op.toFixed(2)}" tabindex="0" role="button" aria-label="${DAYS_LONG[d.getDay()]} ${d.getDate()}, ${n} agenda" onclick="pick(${k})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pick(${k})}">
+      ${isSel ? `<circle class="sel" cx="${x}" cy="${y}" r="${r + 6}"/>` : ''}
+      ${isToday && !isSel ? `<circle class="sel" cx="${x}" cy="${y}" r="${r + 5}" stroke-dasharray="3 3"/>` : ''}
+      <circle class="p ${n ? 'busy' : 'free'}" cx="${x}" cy="${y}" r="${r}"/>
+      ${n ? `<text class="badge" x="${x}" y="${y + 3.5}">${n}</text>` : ''}
+      <text x="${lx}" y="${ly}">${DAYS[d.getDay()]} ${d.getDate()}</text></g>`;
+    if (depth < 0) b += g; else f += g;
+  }
+  behind.innerHTML = b; front.innerHTML = f;
+}
+
+function tween(to, ms, mid) {
+  cancelAnimationFrame(anim);
+  if (REDUCED) { if (mid) mid(); rot = to; drawOrbit(); return; }
+  const from = rot, t0 = performance.now(); let midDone = !mid;
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const frame = now => {
+    const t = Math.min(1, (now - t0) / ms);
+    rot = from + (to - from) * ease(t);
+    if (!midDone && t >= 0.5) { midDone = true; mid(); }
+    drawOrbit();
+    if (t < 1) anim = requestAnimationFrame(frame);
+  };
+  anim = requestAnimationFrame(frame);
+}
+
+function selectedDate() { return addDays(weekStart, sel); }
+function pick(k) {
+  // Slide the shortest way so planet k comes to the front.
+  let delta = (sel - k) * STEP;
+  sel = k; tween(rot + delta, 420); refresh();
+}
+function shiftDay(dir) {
+  const k = sel + dir;
+  if (k < 0 || k > 6) { shiftWeek(dir, dir > 0 ? 0 : 6); return; }
+  pick(k);
+}
+function shiftWeek(dir, landOn) {
+  // A full revolution (plus the step to the landing day) marks a new week.
+  const target = landOn === undefined ? sel : landOn;
+  const to = rot - dir * 360 + (sel - target) * STEP;
+  tween(to, 1100, () => { weekStart = addDays(weekStart, dir * 7); sel = target; refresh(); });
+  if (REDUCED) return;
+}
+function goToday() {
+  const ws = addDays(TODAY, -((TODAY.getDay() + 6) % 7));
+  const diffW = Math.round((ws - weekStart) / 6048e5), k = (TODAY.getDay() + 6) % 7;
+  if (diffW === 0) pick(k);
+  else shiftWeek(Math.sign(diffW), k);
+  calMonth = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+}
+
+/* ---------- Calendar ---------- */
+let calMonth = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+function shiftMonth(dir) { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + dir, 1); drawCal(); }
+function drawCal() {
+  document.getElementById('cal-title').textContent = MONTHS[calMonth.getMonth()] + ' ' + calMonth.getFullYear();
+  const first = addDays(calMonth, -((calMonth.getDay() + 6) % 7));
+  let h = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map(d => `<span class="dow">${d}</span>`).join('');
+  const sd = key(selectedDate());
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(first, i), n = (AGENDA[key(d)] || []).length;
+    const cls = [d.getMonth() !== calMonth.getMonth() ? 'out' : '', key(d) === key(TODAY) ? 'today' : '', key(d) === sd ? 'sel' : ''].join(' ');
+    h += `<button type="button" class="${cls}" onclick="jumpTo(${d.getFullYear()},${d.getMonth()},${d.getDate()})" aria-label="${d.getDate()} ${MONTHS[d.getMonth()]}, ${n} agenda">${d.getDate()}${n ? `<span class="dots">${'<i></i>'.repeat(Math.min(n, 3))}</span>` : ''}</button>`;
+  }
+  document.getElementById('cal').innerHTML = h;
+}
+function jumpTo(y, m, dd) {
+  const d = new Date(y, m, dd), ws = addDays(d, -((d.getDay() + 6) % 7)), k = (d.getDay() + 6) % 7;
+  const diffW = Math.round((ws - weekStart) / 6048e5);
+  if (diffW === 0) pick(k);
+  else { // one revolution per jump, however far
+    tween(rot - Math.sign(diffW) * 360 + (sel - k) * STEP, 1100, () => { weekStart = ws; sel = k; refresh(); });
+  }
+}
+
+/* ---------- Lists ---------- */
+function refresh() {
+  const d = selectedDate(), items = AGENDA[key(d)] || [];
+  const we = addDays(weekStart, 6);
+  const onejan = new Date(weekStart.getFullYear(), 0, 1);
+  document.getElementById('week-label').textContent = 'Minggu ke-' + Math.ceil(((weekStart - onejan) / 864e5 + onejan.getDay() + 1) / 7);
+  document.getElementById('week-range').textContent = weekStart.getDate() + (weekStart.getMonth() !== we.getMonth() ? ' ' + MONTHS[weekStart.getMonth()] : '') + ' – ' + we.getDate() + ' ' + MONTHS[we.getMonth()] + ' ' + we.getFullYear();
+  document.getElementById('sel-day').textContent = DAYS_LONG[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+  document.getElementById('sel-count').textContent = items.length ? items.length + ' agenda' : 'Kosong';
+  document.getElementById('sel-next').textContent = items.length ? 'Pertama ' + items[0][0] + ' · ' + items[0][1] : 'Hari ini kosong. Mau tambah agenda?';
+  document.getElementById('act-day').textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3);
+  document.getElementById('activities').innerHTML = items.length
+    ? items.map(i => `<li class="row"><span class="time">${i[0]}</span><div><div class="t">${i[1]}</div><div class="meta">${i[2]}</div><div class="chips"><span class="chip ${i[3]}">${i[4]}</span></div></div></li>`).join('')
+    : `<li class="meta" style="padding:8px">Tidak ada kegiatan. <a href="#add" style="color:var(--primary);font-weight:600">Tambah jadwal</a></li>`;
+  if (calMonth.getMonth() !== d.getMonth()) calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  drawCal();
+}
+function drawEvents() {
+  document.getElementById('events').innerHTML = EVENTS.map(e => `<li class="ev"><span class="date"><b>${e[0]}</b><small>${e[1]}</small></span><div><div style="font-weight:600">${e[2]}</div><div class="meta">${e[3]}</div></div></li>`).join('');
+}
+function drawTodos() {
+  const done = TODOS.filter(t => t[1]).length;
+  document.getElementById('todos').innerHTML = TODOS.map((t, i) => `<li><label class="todo${t[1] ? ' done' : ''}"><input type="checkbox" ${t[1] ? 'checked' : ''} onchange="TODOS[${i}][1]=this.checked;drawTodos()"><span class="txt">${t[0]}</span></label></li>`).join('');
+  document.getElementById('todo-count').textContent = done + ' dari ' + TODOS.length + ' selesai';
+  document.getElementById('todo-bar').style.width = (TODOS.length ? done / TODOS.length * 100 : 0) + '%';
+}
+function addTodo(e) {
+  e.preventDefault();
+  const v = document.getElementById('todo-in').value.trim();
+  if (!v) return;
+  TODOS.push([v, false]); document.getElementById('todo-in').value = ''; drawTodos();
+}
+const drop = document.getElementById('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+}));
+
+/* ---------- Projects ---------- */
+let openProj = 0;
+function drawProjects() {
+  document.getElementById('projects').innerHTML = PROJECTS.map((p, i) => `
+    <button class="card proj" type="button" aria-pressed="${i === openProj}" onclick="openProj=${i};drawProjects()">
+      <span class="folder ${p.c}"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></span>
+      <span><h3>${p.name}</h3><span class="meta">${p.docs.length} ringkasan · diperbarui ${p.t}</span></span>
+      <span class="foot"><span class="stack" aria-hidden="true">${'<span></span>'.repeat(Math.min(p.docs.length, 4))}</span><span class="chip ${p.c}" style="margin-left:12px">${p.subj}</span></span>
+    </button>`).join('') +
+    `<button class="card proj new" type="button"><span><svg class="i" aria-hidden="true" style="width:28px;height:28px"><use href="#i-folder-plus"/></svg><br><b>Proyek baru</b><br><span class="meta">Gabungkan ringkasan per mata kuliah, tugas, atau ujian</span></span></button>`;
+  const p = PROJECTS[openProj];
+  document.getElementById('proj-name').textContent = p.name;
+  document.getElementById('ps-docs').textContent = p.docs.length;
+  document.getElementById('proj-docs').innerHTML = p.docs.map((d, i) => `
+    <div class="doc-row"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-doc"/></svg></span>
+      <div><div class="t">${d}</div><div class="meta">${['PDF', 'PPTX', 'DOCX', 'PNG'][i % 4]} · ${i + 2} halaman ringkasan · ${i + 1} hari lalu</div></div>
+      <span class="handle" title="Seret untuk mengurutkan" aria-hidden="true"><svg class="i" aria-hidden="true"><use href="#i-grip"/></svg></span></div>`).join('');
+}
+
+/* ---------- Chat (fake, no model call) ---------- */
+function send(e) {
+  e.preventDefault();
+  const ta = document.getElementById('ask'), v = ta.value.trim();
+  if (!v) return;
+  const box = document.getElementById('msgs-in');
+  box.insertAdjacentHTML('beforeend', `<div class="msg me"><div class="bubble"></div></div>`);
+  box.lastElementChild.querySelector('.bubble').textContent = v;
+  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><span class="who" aria-hidden="true"><svg viewBox="0 0 512 512"><use href="#i-atom"/></svg></span><div class="body"><div class="thinking"><i></i><i></i><i></i>Membaca ringkasanmu…</div></div></div>`);
+  ta.value = '';
+  const m = document.getElementById('msgs'); m.scrollTop = m.scrollHeight;
+  setTimeout(() => {
+    const p = document.getElementById('pending'); p.removeAttribute('id');
+    p.querySelector('.body').innerHTML = `<p>Ini contoh tampilan jawaban di mockup. Di aplikasi, jawabannya dibuat dari ringkasan di proyek yang dipilih, lengkap dengan sumber halamannya.</p><div class="srcs"><span class="chip blue">Turunan dan aplikasinya · Hal. 5</span></div>`;
+    m.scrollTop = m.scrollHeight;
+  }, 900);
+}
+function newChat() {
+  document.getElementById('chat-title').textContent = 'Percakapan baru';
+  document.getElementById('msgs-in').innerHTML = `
+    <div style="text-align:center;display:grid;gap:8px;place-items:center;padding:24px 0">
+      <svg viewBox="0 0 512 512" width="56" height="56" aria-hidden="true"><use href="#i-atom"/></svg>
+      <h2 style="font-size:24px">Mau belajar apa hari ini?</h2>
+      <p class="meta">Pertanyaanmu dijawab dari ringkasan dan proyekmu.</p>
+    </div>
+    <div class="starters">
+      <button type="button" onclick="useStarter(this)">Jelaskan ulang bab yang sulit<span>dari Persiapan UTS Kalkulus II</span></button>
+      <button type="button" onclick="useStarter(this)">Buat 5 soal latihan<span>pilihan ganda dengan pembahasan</span></button>
+      <button type="button" onclick="useStarter(this)">Bandingkan dua konsep<span>misalnya stack dan queue</span></button>
+      <button type="button" onclick="useStarter(this)">Susun rencana belajar<span>sampai hari ujian</span></button>
+    </div>`;
+}
+function useStarter(b) { const t = document.getElementById('ask'); t.value = b.firstChild.textContent; t.focus(); }
+
+/* ---------- Shell ---------- */
+const TITLES = { jadwal: ['Jadwal', 'Minggu ini mengorbit di sekitarmu'], ringkasan: ['Ringkasan', 'Kumpulkan ringkasan dalam proyek'], tanya: ['Tanya', 'Belajar lewat percakapan dengan materimu'] };
+function go(p) {
+  if (!TITLES[p]) return;
+  document.querySelectorAll('.page').forEach(s => s.classList.toggle('on', s.id === 'p-' + p));
+  document.querySelectorAll('.nav a').forEach(a => { if (a.dataset.go === p) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.getElementById('page-title').textContent = TITLES[p][0];
+  document.getElementById('page-sub').textContent = TITLES[p][1];
+  toggleMenu(false);
+}
+document.querySelectorAll('.nav a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.go); history.replaceState(null, '', '#' + a.dataset.go); }));
+function toggleTheme() { const h = document.documentElement; h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark'; }
+function toggleMenu(force) {
+  const s = document.getElementById('sidebar'), open = force === undefined ? !s.classList.contains('open') : force;
+  s.classList.toggle('open', open); document.getElementById('scrim').classList.toggle('on', open);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleMenu(false); });
+
+drawOrbit(); refresh(); drawEvents(); drawTodos(); drawProjects();
+if (TITLES[location.hash.slice(1)]) go(location.hash.slice(1));
+</script>
+</body>
+</html>

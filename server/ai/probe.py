@@ -1,8 +1,8 @@
 """P0 platform probe: ModelScope health + whisper loader.
 
 Moved from the v4 engine (arsip/engine-v4/main.py) into `server/ai/` so that
-`openai` is imported nowhere outside `server/ai/` (SPEC §2.1). P2 replaces
-this with the real SPEC §7 modules; P1 keeps the probe as `ai.health()`.
+`openai` is imported nowhere outside `server/ai/` (SPEC §2.1). The model IDs
+live only in llm.py (L1); the probe reuses them here.
 """
 from __future__ import annotations
 
@@ -12,14 +12,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-MODELSCOPE_BASE = "https://api-inference.modelscope.ai/v1"
-FAST_MODEL = "stepfun-ai/Step-3.5-Flash"
-ALLOWED_MODELS = {
-    "zai-org/GLM-5.2",
-    "deepseek-ai/DeepSeek-V4-Pro-0813",
-    "stepfun-ai/Step-3.5-Flash",
-    "Qwen/Qwen3.8-27B",
-}
+from server.ai.llm import ALLOWED_MODELS, MODELSCOPE_BASE, ROLE_MODELS
 
 # --- shared data directory (SPEC §4.1: /data if writable, else /tmp/orvina) --
 
@@ -45,7 +38,7 @@ def _probe_model() -> str:
     PROBE_MODEL because the platform can drop a model at any time (observed:
     Step-3.5-Flash returned 'no provider supported' on 2026-10-31). Only the
     four allowed models are accepted (SPEC §2.1)."""
-    m = os.environ.get("PROBE_MODEL", FAST_MODEL)
+    m = os.environ.get("PROBE_MODEL", ROLE_MODELS["FAST"])
     if m not in ALLOWED_MODELS:
         raise ValueError(f"PROBE_MODEL {m!r} is not an allowed model")
     return m
@@ -67,7 +60,7 @@ def modelscope_probe() -> tuple[str, int]:
             max_tokens=1,
         )
         return "ok", int((time.monotonic() - t0) * 1000)
-    except Exception as exc:  # noqa: BLE001 - mapped to a status below
+    except Exception as exc:
         msg = str(exc).lower()
         if "401" in msg or "unauthorized" in msg:
             return "invalid_token", 0
@@ -87,8 +80,10 @@ def ms_loop(period_s: float = 300.0) -> None:
 
 # --- whisper (lazy, one global lock, CPU int8 — SPEC §9.2) -------------------
 
+# Scope cut: ENABLE_TRANSCRIPTION defaults to false (matches server/config.py),
+# so /api/health reports whisper as "disabled", not an error or a load in progress.
 _whisper_state: dict[str, Any] = {
-    "status": "disabled" if os.environ.get("ENABLE_TRANSCRIPTION", "true").lower() == "false" else "idle",
+    "status": "disabled" if os.environ.get("ENABLE_TRANSCRIPTION", "false").lower() != "true" else "idle",
     "model": None,
     "lock": threading.Lock(),
     "loading_started": False,
@@ -109,7 +104,7 @@ def _load_whisper() -> None:
             model = WhisperModel(name, device="cpu", compute_type="int8", download_root=local_dir)
             _whisper_state["model"] = model
             _whisper_state["status"] = "ready"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logging.getLogger("orvina.ai").exception("whisper load failed")
             _whisper_state["status"] = "error"
             _whisper_state["error"] = str(exc)[:200]

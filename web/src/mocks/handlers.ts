@@ -9,6 +9,7 @@
  */
 import { http, HttpResponse, delay } from "msw";
 
+import type { components } from "../lib/api-types";
 import {
   docRegresi,
   mockAuthResponse,
@@ -80,7 +81,7 @@ export const handlers = [
       server: "ok",
       modelscope: "ok",
       modelscope_latency_ms: 980,
-      whisper: "ready",
+      whisper: "disabled",
       version: "0.2.0-p1-mock",
     }),
   ),
@@ -158,7 +159,7 @@ export const handlers = [
 
   http.get("/api/jobs/:jobId/stream", ({ params }) => {
     const job = params.jobId === mockJobId ? mockJob : { ...mockJob, id: String(params.jobId) };
-    const events = job.stages.map((stage) => ({
+    const events: { event: string; data: Record<string, unknown> }[] = job.stages.map((stage: string) => ({
       event: "stage",
       data: { job_id: job.id, stage, stages: job.stages },
     }));
@@ -272,7 +273,7 @@ export const handlers = [
   http.get("/api/events/:id.ics", ({ params }) => {
     const ev = mockEvents.find((e) => e.id === Number(params.id));
     if (!ev) return HttpResponse.json({ error: { code: "not_found", message_key: "errors.not_found" } }, { status: 404 });
-    return new HttpResponse(ics(ev.id, ev.title, ev.start_at.replace("+07:00", "Z"), ev.end_at.replace("+07:00", "Z"), ev.location), {
+    return new HttpResponse(ics(ev.id, ev.title, ev.start_at.replace("+07:00", "Z"), ev.end_at.replace("+07:00", "Z"), ev.location ?? null), {
       headers: { "Content-Type": "text/calendar", "Content-Disposition": `attachment; filename="orvina-ev${ev.id}.ics"` },
     });
   }),
@@ -388,7 +389,7 @@ export const handlers = [
       ...detail,
       status: "answered",
       best_answer_id: body.answer_id,
-      answers: detail.answers.map((a) => ({ ...a, is_best: a.id === body.answer_id })),
+      answers: detail.answers.map((a: components["schemas"]["Answer"]) => ({ ...a, is_best: a.id === body.answer_id })),
     });
   }),
 

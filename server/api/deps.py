@@ -21,16 +21,32 @@ AI_LIMIT_PER_MIN = 20
 UPLOAD_LIMIT_PER_MIN = 10
 
 
-def get_current_user(authorization: str = Header(default="")) -> dict[str, Any]:
-    """Resolve the Bearer token to the current user row."""
-    token = authorization[7:] if authorization.startswith("Bearer ") else None
+def extract_token(x_orvina_token: str, authorization: str) -> str | None:
+    """Session token from the custom header first, then the classic Bearer one.
+
+    The Studio gateway strips the standard Authorization header before it
+    reaches the app, so the web client sends X-Orvina-Token instead. The
+    Bearer form is kept for local dev, tests and curl.
+    """
+    token = x_orvina_token.strip() or None
+    if token is None and authorization.startswith("Bearer "):
+        token = authorization[7:].strip() or None
+    return token
+
+
+def get_current_user(
+    x_orvina_token: str = Header(default=""),
+    authorization: str = Header(default=""),
+) -> dict[str, Any]:
+    """Resolve the session token to the current user row."""
+    token = extract_token(x_orvina_token, authorization)
     if not token:
         raise APIError("unauthenticated", 401)
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     row = db.read_one(
         "SELECT u.id, u.username, u.display_name, u.lang, u.theme, u.reduce_motion,"
         " u.onboarding_done FROM sessions s JOIN users u ON u.id = s.user_id"
-        " WHERE s.token_hash = ? AND s.expires_at > datetime('now')",
+        " WHERE s.token_hash = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
         (token_hash,),
     )
     if row is None:

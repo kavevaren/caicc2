@@ -1,0 +1,9 @@
+# Ruff config for Orvina (SPEC §12: ruff on Python). Kept minimal.
+target-version = "py310"
+line-length = 140
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "PIE"]
+# B008: FastAPI declares dependencies via `Depends(...)` / `Form(...)` in argument
+# defaults — the idiomatic pattern, not a bug. Ignored project-wide.
+ignore = ["B008"]

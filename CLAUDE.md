@@ -1,2 +1,2 @@
 @AGENTS.md
-@prompts/_RULES.md
+@prompts/lean/_LEAN.md

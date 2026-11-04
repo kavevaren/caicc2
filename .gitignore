@@ -28,3 +28,9 @@ orvina.db*
 .DS_Store
 .idea/
 .vscode/
+
+# Local copies and archives (not part of the app)
+Orviva/
+_claude_test/
+*.zip
+*.tgz
